@@ -1,0 +1,24 @@
+{
+  "name": "browserless-example",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start-browserless": "docker run -p 3000:3000 browserless/chrome"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/christian-fei/browserless-example.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/christian-fei/browserless-example/issues"
+  },
+  "homepage": "https://github.com/christian-fei/browserless-example#readme",
+  "dependencies": {
+    "puppeteer": "^2.1.1"
+  }
+}
