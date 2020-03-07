@@ -1,8 +1,11 @@
 #!/bin/sh
 
+CONCURRECY=3
+TIMEOUT=600000
+
 docker run \
-  -e "MAX_CONCURRENT_SESSIONS=10" \
+  -e "MAX_CONCURRENT_SESSIONS=$CONCURRENCY" \
   -e "MAX_QUEUE_LENGTH=0" \
   -e "PREBOOT_CHROME=true" \
-  -e "CONNECTION_TIMEOUT=300000" \
+  -e "CONNECTION_TIMEOUT=$TIMEOUT" \
   -p 3000:3000 --rm -it browserless/chrome
