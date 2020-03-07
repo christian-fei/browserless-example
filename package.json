@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/christian-fei/browserless-example#readme",
   "dependencies": {
+    "p-queue": "^6.3.0",
     "puppeteer": "^2.1.1"
   }
 }

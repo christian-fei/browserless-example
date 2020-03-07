@@ -1,7 +1,7 @@
 #!/bin/sh
 
 docker run \
-  -e "MAX_CONCURRENT_SESSIONS=25" \
+  -e "MAX_CONCURRENT_SESSIONS=10" \
   -e "MAX_QUEUE_LENGTH=0" \
   -e "PREBOOT_CHROME=true" \
   -e "CONNECTION_TIMEOUT=300000" \
