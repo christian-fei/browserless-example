@@ -13,19 +13,15 @@ async function main (baseurl = 'https://google.com', seen = new Set()) {
   const browser = await puppeteer.connect({ browserWSEndpoint: 'ws://localhost:3000' })
   const basepath = baseurl.replace(/:/g, '').replace(/\//g, '|')
 
-  try { fs.mkdirSync(path.resolve(__dirname, 'sites')) } catch (err) {}
-  try { fs.mkdirSync(path.resolve(__dirname, 'sites', basepath)) } catch (err) {}
+  mkdir(path.resolve(__dirname, 'sites'))
+  mkdir(path.resolve(__dirname, 'sites', basepath))
 
   const linksToCrawls = [baseurl]
   queue.add(() => crawl(baseurl, { linksToCrawls, seen, queue }))
 
   async function crawl (link, { linksToCrawls, seen, queue }) {
     const filepath = path.resolve(__dirname, 'sites', basepath, link.replace(/\//g, '|')) + '.html'
-    try {
-      fs.statSync(filepath)
-      return console.log('  ..already crawled', link)
-    } catch (err) {}
-
+    if (fileExists(filepath)) return console.log('  ..already crawled', link)
     console.log('processing', link)
     if (!link || seen.has(link)) return console.log('  ..seen', link)
 
@@ -37,9 +33,7 @@ async function main (baseurl = 'https://google.com', seen = new Set()) {
     await page.goto(link.startsWith('/') ? `${baseurl}${link}` : link)
     await page.waitFor(3000)
 
-    try {
-      fs.writeFileSync(filepath, await page.content(), { encoding: 'utf8' })
-    } catch (err) { console.error(link, err.message) }
+    writeFile(filepath, await page.content())
 
     const links = await page.evaluate((baseurl) => [...document.querySelectorAll(`a[href^="/"]`)].map(a => a.getAttribute('href')), baseurl)
     const newLinks = links.filter(l => !seen.has(l))
@@ -57,3 +51,7 @@ async function main (baseurl = 'https://google.com', seen = new Set()) {
   await queue.onIdle()
   await browser.close()
 }
+
+function mkdir (dirpath) { try { fs.mkdirSync(dirpath) } catch (err) {} }
+function writeFile (filepath, content) { try { fs.writeFileSync(filepath, content, { encoding: 'utf8' }) } catch (err) { console.error(filepath, err.message) } }
+function fileExists (filepath) { try { fs.statSync(filepath); return true } catch (err) { return false } }
