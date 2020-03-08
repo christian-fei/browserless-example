@@ -1,6 +1,6 @@
 #!/bin/sh
 
-CONCURRECY=3
+CONCURRECY=15
 TIMEOUT=600000
 
 docker run \
