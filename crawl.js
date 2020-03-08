@@ -14,62 +14,59 @@ async function createBrowser () {
 }
 
 async function main (baseurl = 'https://example.com', seen = new Set(), completed = new Set()) {
-  const queue = new PQueue({ concurrency: 7, timeout: 90000 })
+  const queue = new PQueue({ concurrency: 10, timeout: 90000 })
 
-  queue.add(() => crawl(baseurl, { seen, completed, queue }))
+  queue.add(() => crawl(baseurl, { baseurl, seen, completed, queue }))
 
   setInterval(() => {
     console.log('seen urls', seen.size, ' ❍  completed', completed.size, ' ❍ queue size', queue.size, ' ❍ pending', queue.pending)
   }, 1000 * 5)
 
-  async function crawl (link, { seen = new Set(), completed = new Set(), queue = new PQueue({ concurrency: 10, timeout: 60000 }) }) {
-    let browser
-    let page
-    try {
-      const filepath = linkToFilepath(link)
-      if (exists(filepath)) return console.log('  ..exists', filepath)
-      console.log('🤖  processing', link)
-
-      console.log('✨  new link', link)
-      const waitTime = parseInt(Math.random() * 2000, 10)
-      await new Promise(resolve => setTimeout(resolve, waitTime))
-
-      browser = await createBrowser()
-      page = await browser.newPage()
-
-      console.log('🕸   crawling', link)
-
-      await page.goto(link, { waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
-      await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
-
-      save(link, await page.content())
-      completed.add(link)
-
-      console.log('✅  completed', link)
-
-      const links = await page.evaluate((baseurl) => [...document.querySelectorAll(`[href^="/"],[href^="${baseurl}"]`)].map(a => a.getAttribute('href')), baseurl)
-      links
-        .map(link => link.startsWith(baseurl) ? link : `${baseurl.replace(/\/$/, '')}${link}`)
-        .filter(link => !/#.*$/.test(link))
-        .filter(l => !seen.has(l))
-        .forEach(l => {
-          seen.add(l)
-          queue.add(() => retry(() => crawl(l, { seen, completed, queue })))
-        })
-    } catch (err) {
-      console.error('recovering from error', err.message)
-
-      await queue.pause()
-      console.error('oops', err.message)
-      page && await page.close()
-      browser && await browser.close().catch(_ => {})
-      await queue.start()
-
-      throw err
-    }
-  }
-
   await queue.onIdle()
+}
+
+async function crawl (link, { baseurl, seen = new Set(), completed = new Set(), queue = new PQueue({ concurrency: 10, timeout: 60000 }) }) {
+  let browser
+  let page
+  try {
+    const filepath = linkToFilepath(link)
+    console.log('🤖  processing', link, filepath)
+    if (exists(filepath)) return console.log('  ..exists', filepath)
+
+    browser = await createBrowser()
+    page = await browser.newPage()
+
+    console.log('🕸   crawling', link)
+
+    await page.goto(link, { waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
+    await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
+
+    save(link, await page.content())
+    completed.add(link)
+
+    console.log('✅  completed', link)
+
+    const links = await page.evaluate((baseurl) => [...document.querySelectorAll(`a[href^="/"],a[href^="${baseurl}"]`)].map(a => a.getAttribute('href')), baseurl)
+    links
+      .filter(link => !link.startsWith('//'))
+      .map(link => link.startsWith(baseurl) ? link : `${baseurl.replace(/\/$/, '')}${link}`)
+      .filter(link => !/#.*$/.test(link))
+      .filter(l => !seen.has(l))
+      .forEach(l => {
+        seen.add(l)
+        queue.add(() => retry(() => crawl(l, { baseurl, seen, completed, queue })))
+      })
+  } catch (err) {
+    console.error('recovering from error', err.message)
+
+    await queue.pause()
+    console.error('oops', err.message)
+    page && await page.close()
+    browser && await browser.close().catch(_ => {})
+    await queue.start()
+
+    throw err
+  }
 }
 
 function mkdir (dirpath) { try { fs.mkdirSync(dirpath, { recursive: true }) } catch (err) {} }
