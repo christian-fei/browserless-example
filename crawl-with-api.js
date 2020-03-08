@@ -46,6 +46,7 @@ async function crawl (link, { baseurl, seen = new Set(), completed = new Set(), 
   console.log('✅  completed', link)
 
   const links = json.data[0].results
+    .filter(r => r.attributes.find(a => a.name === 'href'))
     .map(r => r.attributes.find(a => a.name === 'href').value)
 
   links
