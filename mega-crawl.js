@@ -1,4 +1,4 @@
-const puppeteer = require('puppeteer')
+const { browser: { createBrowser } } = require('mega-scraper')
 const { default: PQueue } = require('p-queue')
 const retry = require('p-retry')
 
@@ -8,10 +8,6 @@ const path = require('path')
 main(process.argv[2])
   .then(() => console.log('finished, exiting') && process.exit(0))
   .catch(err => console.error(err) && process.exit(1))
-
-async function createBrowser () {
-  return puppeteer.connect({ browserWSEndpoint: 'ws://localhost:3000' })
-}
 
 async function main (baseurl = 'https://example.com', seen = new Set()) {
   const queue = new PQueue({ concurrency: 5, timeout: 90000 })
@@ -27,17 +23,17 @@ async function main (baseurl = 'https://example.com', seen = new Set()) {
     let browser
     let page
     try {
+      const filepath = linkToFilepath(link)
+      console.log('🤖  processing', link)
       if (!link || seen.has(link)) return console.log(' ..seen', link)
       seen.add(link)
-      const filepath = linkToFilepath(link)
       if (exists(filepath)) return console.log('  ..exists', filepath)
-      console.log('🤖  processing', link)
 
       console.log('✨  new link', link)
       const waitTime = parseInt(Math.random() * 2000, 10)
       await new Promise(resolve => setTimeout(resolve, waitTime))
 
-      browser = await createBrowser()
+      browser = await createBrowser({ browserWSEndpoint: 'ws://localhost:3000', stylesheets: false, images: false, javascript: false })
       page = await browser.newPage()
 
       console.log('🕸   crawling', link)

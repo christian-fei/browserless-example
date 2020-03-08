@@ -19,6 +19,7 @@
   },
   "homepage": "https://github.com/christian-fei/browserless-example#readme",
   "dependencies": {
+    "mega-scraper": "^12.2.3",
     "p-queue": "^6.3.0",
     "p-retry": "^4.2.0",
     "puppeteer": "^2.1.1"
