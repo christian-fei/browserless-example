@@ -14,13 +14,13 @@ async function createBrowser () {
 }
 
 async function main (baseurl = 'https://example.com', seen = new Set()) {
-  const queue = new PQueue({ concurrency: 10, timeout: 90000 })
-  let browser = await createBrowser()
+  const queue = new PQueue({ concurrency: 5, timeout: 90000 })
 
   const linksToCrawls = [baseurl]
   queue.add(() => crawl(baseurl, { linksToCrawls, seen, queue }))
 
   async function crawl (link, { linksToCrawls = [], seen = new Set(), queue = new PQueue({ concurrency: 10, timeout: 60000 }) }) {
+    let browser
     let page
     try {
       const filepath = linkToFilepath(link)
@@ -36,11 +36,12 @@ async function main (baseurl = 'https://example.com', seen = new Set()) {
       const waitTime = parseInt(Math.random() * 2000, 10)
       await new Promise(resolve => setTimeout(resolve, waitTime))
 
+      browser = await createBrowser()
       page = await browser.newPage()
 
       console.log('🕸   crawling', link)
 
-      await page.goto(link, { timeout: 60000 })
+      await page.goto(link, { waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
       await page.waitForNavigation({ waitUntil: 'networkidle2', timeout: 10000 }).catch(_ => {})
 
       save(link, await page.content())
@@ -61,17 +62,18 @@ async function main (baseurl = 'https://example.com', seen = new Set()) {
       console.log('progress', seen.size, 'crawled', ' ❍ queue size', queue.size, ' ❍ pending', queue.pending)
     } catch (err) {
       console.error('recovering from error', err.message)
+
       await queue.pause()
       console.error('oops', err.message)
       page && await page.close()
-      await browser.close().catch(_ => {})
-      browser = await createBrowser()
+      browser && await browser.close().catch(_ => {})
       await queue.start()
+
       throw err
     }
   }
+
   await queue.onIdle()
-  await browser.close()
 }
 
 function mkdir (dirpath) { try { fs.mkdirSync(dirpath, { recursive: true }) } catch (err) {} }
