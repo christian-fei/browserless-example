@@ -12,8 +12,7 @@ main(process.argv[2])
 async function main (baseurl = 'https://example.com', seen = new Set()) {
   const queue = new PQueue({ concurrency: 5, timeout: 90000 })
 
-  const linksToCrawls = [baseurl]
-  queue.add(() => crawl(baseurl, { linksToCrawls, seen, queue }))
+  queue.add(() => crawl(baseurl, { seen, queue }))
 
   setInterval(() => {
     console.log('progress', seen.size, 'crawled', ' ❍ queue size', queue.size, ' ❍ pending', queue.pending)
