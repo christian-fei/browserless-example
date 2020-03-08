@@ -23,7 +23,6 @@ async function main (baseurl = 'https://example.com', seen = new Set(), complete
 
 async function crawl (link, { baseurl, seen = new Set(), completed = new Set(), queue = new PQueue({ concurrency: 10, timeout: 60000 }) }) {
   const filepath = linkToFilepath(link)
-  console.log('🤖  processing', link, filepath)
   if (exists(filepath)) return console.log('  ..exists', filepath)
 
   console.log('🕸   crawling', link)
@@ -58,6 +57,7 @@ async function crawl (link, { baseurl, seen = new Set(), completed = new Set(), 
       seen.add(l)
       queue.add(() => retry(() => crawl(l, { baseurl, seen, completed, queue })))
     })
+  console.log('seen urls', seen.size, ' ❍  completed', completed.size, ' ❍ queue size', queue.size, ' ❍ pending', queue.pending)
 }
 
 function mkdir (dirpath) { try { fs.mkdirSync(dirpath, { recursive: true }) } catch (err) {} }

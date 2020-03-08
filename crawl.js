@@ -30,7 +30,6 @@ async function crawl (link, { baseurl, seen = new Set(), completed = new Set(), 
   let page
   try {
     const filepath = linkToFilepath(link)
-    console.log('🤖  processing', link, filepath)
     if (exists(filepath)) return console.log('  ..exists', filepath)
 
     browser = await createBrowser()
